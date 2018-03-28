@@ -56,16 +56,10 @@ public class AccountServiceImpl implements AccountService {
         if (find(payment.getPayerAccountID()) != null && (payment.getAmount() > find(payment.getPayerAccountID()).getBalance())) {
             return Result.INSUFFICIENT_FUNDS;
         }
-        if (!isPayerIdExists(payment.getPayerID())) {
+        if (find(payment.getPayerAccountID()) == null || !isPayerIdExists(payment.getPayerID())) {
             return Result.PAYER_NOT_FOUND;
         }
-        if (find(payment.getPayerAccountID()) == null) {
-            return Result.PAYER_NOT_FOUND;
-        }
-        if (find(payment.getRecipientAccountID()) == null) {
-            return Result.RECIPIENT_NOT_FOUND;
-        }
-        if (!isPayerIdExists(payment.getRecipientID())) {
+        if (find(payment.getRecipientAccountID()) == null || !isPayerIdExists(payment.getRecipientID())) {
             return Result.RECIPIENT_NOT_FOUND;
         }
         payments.add(payment.getOperationID());
