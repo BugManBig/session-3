@@ -17,6 +17,9 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override public Result create(long clientID, long accountID, float initialBalance, Currency currency) {
+        if (fraudMonitoring.check(clientID)) {
+            return Result.FRAUD;
+        }
         if (find(accountID) == null) {
             accounts.add(new Account(clientID, accountID, currency, initialBalance));
             return Result.OK;
@@ -36,7 +39,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override public Account find(long accountID) {
         for (Account elem : accounts) {
-            if (elem.getClientID() == accountID) {
+            if (elem.getAccountID() == accountID) {
                 return elem;
             }
         }
@@ -44,22 +47,39 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override public Result doPayment(Payment payment) {
+        if (fraudMonitoring.check(payment.getPayerID())) {
+            return Result.FRAUD;
+        }
         if (payments.contains(payment.getOperationID())) {
             return Result.ALREADY_EXISTS;
         }
-        if (payment.getAmount() > find(payment.getPayerAccountID()).getBalance()) {
+        if (find(payment.getPayerAccountID()) != null && (payment.getAmount() > find(payment.getPayerAccountID()).getBalance())) {
             return Result.INSUFFICIENT_FUNDS;
+        }
+        if (!isPayerIdExists(payment.getPayerID())) {
+            return Result.PAYER_NOT_FOUND;
         }
         if (find(payment.getPayerAccountID()) == null) {
             return Result.PAYER_NOT_FOUND;
         }
-        if (find(payment.getRecipientAccountID()) != null) {
+        if (find(payment.getRecipientAccountID()) == null) {
             return Result.RECIPIENT_NOT_FOUND;
         }
-        if (fraudMonitoring.check(payment.getPayerID())) {
-            return Result.FRAUD;
+        if (!isPayerIdExists(payment.getRecipientID())) {
+            return Result.RECIPIENT_NOT_FOUND;
         }
         payments.add(payment.getOperationID());
+        Account from = find(payment.getPayerAccountID());
+        Account to = find(payment.getRecipientAccountID());
+        from.setBalance(from.getBalance() - payment.getAmount());
+        to.setBalance(to.getBalance() + payment.getAmount());
         return Result.OK;
+    }
+
+    private boolean isPayerIdExists(long payerID) {
+        for (Account elem : accounts) {
+            if (elem.getClientID() == payerID) return true;
+        }
+        return false;
     }
 }
