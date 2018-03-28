@@ -71,8 +71,12 @@ public class AccountServiceImpl implements AccountService {
         payments.add(payment.getOperationID());
         Account from = find(payment.getPayerAccountID());
         Account to = find(payment.getRecipientAccountID());
+        float sum = payment.getAmount();
+        if (from.getCurrency() != to.getCurrency()) {
+            sum = from.getCurrency().to(payment.getAmount(), to.getCurrency());
+        }
         from.setBalance(from.getBalance() - payment.getAmount());
-        to.setBalance(to.getBalance() + payment.getAmount());
+        to.setBalance(to.getBalance() + sum);
         return Result.OK;
     }
 
