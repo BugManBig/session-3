@@ -18,19 +18,19 @@ public class AccountServiceImpl implements AccountService {
         if (fraudMonitoring.check(clientID)) {
             return Result.FRAUD;
         }
-        if (find(accountID) == null) {
-            Account account = new Account(clientID, accountID, currency, initialBalance);
-            accountIdToAccount.put(accountID, account);
-            if (findForClient(clientID) == null) {
-                List<Account> accounts = new ArrayList<>();
-                accounts.add(account);
-                clientIdToAccountsList.put(clientID, accounts);
-            } else {
-                clientIdToAccountsList.get(clientID).add(account);
-            }
-            return Result.OK;
+        if (find(accountID) != null) {
+            return Result.ALREADY_EXISTS;
         }
-        return Result.ALREADY_EXISTS;
+        Account account = new Account(clientID, accountID, currency, initialBalance);
+        accountIdToAccount.put(accountID, account);
+        if (findForClient(clientID) == null) {
+            List<Account> accounts = new ArrayList<>();
+            accounts.add(account);
+            clientIdToAccountsList.put(clientID, accounts);
+        } else {
+            clientIdToAccountsList.get(clientID).add(account);
+        }
+        return Result.OK;
     }
 
     @Override public List<Account> findForClient(long clientID) {
