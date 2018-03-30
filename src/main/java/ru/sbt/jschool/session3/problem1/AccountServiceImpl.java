@@ -51,10 +51,10 @@ public class AccountServiceImpl implements AccountService {
         if (find(payment.getPayerAccountID()) != null && (payment.getAmount() > find(payment.getPayerAccountID()).getBalance())) {
             return Result.INSUFFICIENT_FUNDS;
         }
-        if (find(payment.getPayerAccountID()) == null || !isPayerIdExists(payment.getPayerID())) {
+        if (find(payment.getPayerAccountID()) == null || clientIdToAccountsList.get(payment.getPayerID()) == null) {
             return Result.PAYER_NOT_FOUND;
         }
-        if (find(payment.getRecipientAccountID()) == null || !isPayerIdExists(payment.getRecipientID())) {
+        if (find(payment.getRecipientAccountID()) == null || clientIdToAccountsList.get(payment.getRecipientID()) == null) {
             return Result.RECIPIENT_NOT_FOUND;
         }
         payments.add(payment.getOperationID());
@@ -67,9 +67,5 @@ public class AccountServiceImpl implements AccountService {
         from.setBalance(from.getBalance() - payment.getAmount());
         to.setBalance(to.getBalance() + sum);
         return Result.OK;
-    }
-
-    private boolean isPayerIdExists(long payerID) {
-        return payments.contains(payerID);
     }
 }
