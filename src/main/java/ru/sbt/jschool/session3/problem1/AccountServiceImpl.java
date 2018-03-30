@@ -1,16 +1,14 @@
 package ru.sbt.jschool.session3.problem1;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 /**
  */
 public class AccountServiceImpl implements AccountService {
     protected FraudMonitoring fraudMonitoring;
-    private ArrayList<Account> accounts = new ArrayList<>();
-    private HashSet<Long> payments = new HashSet<>();
+    private Map<Long, List<Account>> clientIdToAccountsList = new HashMap<>();
+    private Map<Long, Account> accountIdToAccount = new HashMap<>();
+    private Set<Long> payments = new HashSet<>();
 
     public AccountServiceImpl(FraudMonitoring fraudMonitoring) {
         this.fraudMonitoring = fraudMonitoring;
@@ -21,29 +19,26 @@ public class AccountServiceImpl implements AccountService {
             return Result.FRAUD;
         }
         if (find(accountID) == null) {
-            accounts.add(new Account(clientID, accountID, currency, initialBalance));
+            Account account = new Account(clientID, accountID, currency, initialBalance);
+            accountIdToAccount.put(accountID, account);
+            if (findForClient(clientID) == null) {
+                List<Account> accounts = new ArrayList<>();
+                accounts.add(account);
+                clientIdToAccountsList.put(clientID, accounts);
+            } else {
+                clientIdToAccountsList.get(clientID).add(account);
+            }
             return Result.OK;
         }
         return Result.ALREADY_EXISTS;
     }
 
     @Override public List<Account> findForClient(long clientID) {
-        ArrayList<Account> result = new ArrayList<>();
-        for (Account elem : accounts) {
-            if (elem.getClientID() == clientID) {
-                result.add(elem);
-            }
-        }
-        return result;
+        return clientIdToAccountsList.get(clientID);
     }
 
     @Override public Account find(long accountID) {
-        for (Account elem : accounts) {
-            if (elem.getAccountID() == accountID) {
-                return elem;
-            }
-        }
-        return null;
+        return accountIdToAccount.get(accountID);
     }
 
     @Override public Result doPayment(Payment payment) {
@@ -75,9 +70,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private boolean isPayerIdExists(long payerID) {
-        for (Account elem : accounts) {
-            if (elem.getClientID() == payerID) return true;
-        }
-        return false;
+        return payments.contains(payerID);
     }
 }
